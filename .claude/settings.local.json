@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(python3:*)",
+      "Bash(.venv/bin/pip install:*)",
+      "Bash(.venv/bin/python -c \"\nimport config\nimport data.collector\nimport data.news_fetcher\nimport data.classifier\nprint\\('All modules import successfully'\\)\nprint\\(f'Catalyst types: {len\\(config.CATALYST_TYPES\\)}'\\)\nprint\\(f'Cache dir: {config.CACHE_DIR}'\\)\nprint\\(f'Output dir: {config.OUTPUT_DIR}'\\)\nprint\\(f'Date range: {config.START_DATE} -> {config.TODAY}'\\)\n\")",
+      "Bash(.venv/bin/python -c \"\nfrom app import app\nprint\\('Dashboard app loads successfully'\\)\nprint\\(f'Layout components: {len\\(app.layout.children\\)}'\\)\n\")",
+      "Bash(source .venv/bin/activate)",
+      "Bash(python -c \"import yfinance as yf; print\\(yf.download\\(''MRNA'', period=''5d''\\)\\)\")",
+      "Bash(source /Users/noahsmorgon/Desktop/biotech-catalyst-system/.venv/bin/activate)",
+      "Bash(pip show:*)",
+      "Bash(/Users/noahsmorgon/Desktop/biotech-catalyst-system/.venv/bin/python -c \"import yfinance; print\\(yfinance.__version__\\)\" 2>&1)",
+      "Bash(/Users/noahsmorgon/Desktop/biotech-catalyst-system/.venv/bin/python -c \"\nimport yfinance as yf\nimport signal, sys\n\ndef timeout_handler\\(signum, frame\\):\n    print\\('TIMEOUT: yf.download\\(\\) hung for 10 seconds'\\)\n    sys.exit\\(1\\)\n\nsignal.signal\\(signal.SIGALRM, timeout_handler\\)\nsignal.alarm\\(10\\)\n\ntry:\n    t = yf.Ticker\\('MRNA'\\)\n    print\\('Ticker created OK'\\)\n    hist = t.history\\(period='5d'\\)\n    print\\('History result:'\\)\n    print\\(hist\\)\nexcept Exception as e:\n    print\\(f'Error: {e}'\\)\n\" 2>&1)",
+      "Bash(/Users/noahsmorgon/Desktop/biotech-catalyst-system/.venv/bin/python -c \"\nimport urllib.request\nimport time\n\nstart = time.time\\(\\)\ntry:\n    req = urllib.request.Request\\('https://query1.finance.yahoo.com/v8/finance/chart/MRNA?range=5d&interval=1d',\n        headers={'User-Agent': 'Mozilla/5.0'}\\)\n    resp = urllib.request.urlopen\\(req, timeout=10\\)\n    print\\(f'HTTP {resp.status} in {time.time\\(\\)-start:.1f}s'\\)\n    data = resp.read\\(\\)\n    print\\(f'Got {len\\(data\\)} bytes'\\)\nexcept Exception as e:\n    print\\(f'Error after {time.time\\(\\)-start:.1f}s: {e}'\\)\n\" 2>&1)",
+      "Bash(/Users/noahsmorgon/Desktop/biotech-catalyst-system/.venv/bin/python -c \"\nimport requests\ntry:\n    r = requests.get\\('https://query1.finance.yahoo.com/v8/finance/chart/MRNA?range=5d&interval=1d', timeout=5\\)\n    print\\(f'Status: {r.status_code}'\\)\nexcept Exception as e:\n    print\\(f'Error: {type\\(e\\).__name__}: {e}'\\)\n\" 2>&1)",
+      "Bash(/Users/noahsmorgon/Desktop/biotech-catalyst-system/.venv/bin/python -c \"\nimport yfinance as yf\nimport logging\nimport signal, sys\n\nlogging.basicConfig\\(level=logging.DEBUG\\)\n\ndef timeout_handler\\(signum, frame\\):\n    import traceback\n    traceback.print_stack\\(frame\\)\n    print\\('\\\\n\\\\nTIMEOUT after 15s'\\)\n    sys.exit\\(1\\)\n\nsignal.signal\\(signal.SIGALRM, timeout_handler\\)\nsignal.alarm\\(15\\)\n\nt = yf.Ticker\\('MRNA'\\)\nhist = t.history\\(period='5d'\\)\nprint\\(hist\\)\n\" 2>&1)",
+      "Bash(/Users/noahsmorgon/Desktop/biotech-catalyst-system/.venv/bin/python -c \"\nimport yfinance as yf\nimport signal, sys\n\ndef timeout_handler\\(signum, frame\\):\n    import traceback\n    traceback.print_stack\\(frame\\)\n    print\\('\\\\n\\\\nTIMEOUT: yf.download\\(\\) hung'\\)\n    sys.exit\\(1\\)\n\nsignal.signal\\(signal.SIGALRM, timeout_handler\\)\nsignal.alarm\\(15\\)\n\nprint\\('Calling yf.download\\([\\\\\"MRNA\\\\\"], period=\\\\\"5d\\\\\"\\)...'\\)\ndf = yf.download\\(['MRNA'], period='5d', progress=False\\)\nprint\\('Result:'\\)\nprint\\(df\\)\n\" 2>&1)",
+      "Bash(/Users/noahsmorgon/Desktop/biotech-catalyst-system/.venv/bin/python run_pipeline.py --ticker MRNA --days 5 --dry-run 2>&1)",
+      "Bash(/Users/noahsmorgon/Desktop/biotech-catalyst-system/.venv/bin/python -c \"\nimport config\nconfig.MIN_PCT_CHANGE = 3.0\nfrom data.collector import find_daily_movers\nfrom datetime import date, timedelta\ndf = find_daily_movers\\(['MRNA'], date.today\\(\\) - timedelta\\(days=30\\), date.today\\(\\), min_pct_change=3.0\\)\nprint\\(f'Found {len\\(df\\)} movers with 3%+ threshold'\\)\nprint\\(df[['date','ticker','pct_change']].to_string\\(\\) if not df.empty else 'None'\\)\n\" 2>&1)"
+    ]
+  }
+}

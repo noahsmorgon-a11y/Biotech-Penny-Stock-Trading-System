@@ -1,0 +1,10 @@
+yfinance>=0.2.51
+pandas>=2.2.0
+requests>=2.31.0
+finnhub-python>=2.4.20
+anthropic>=0.40.0
+dash>=2.18.0
+dash-bootstrap-components>=1.6.0
+plotly>=5.24.0
+python-dotenv>=1.0.1
+tqdm>=4.66.0
