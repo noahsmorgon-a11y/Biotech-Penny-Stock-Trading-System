@@ -18,7 +18,7 @@ START_DATE = TODAY - timedelta(days=LOOKBACK_DAYS)
 
 # Mover Detection
 MIN_PCT_CHANGE = 10.0  # Minimum absolute % daily move to qualify
-MIN_VOLUME_MULTIPLIER = 1.5  # Volume must be 1.5x 20-day average
+MIN_VOLUME_MULTIPLIER = 0.0  # Disabled — don't filter out movers by volume
 
 # Biotech Universe Source ETFs
 BIOTECH_ETFS = ["XBI", "IBB"]

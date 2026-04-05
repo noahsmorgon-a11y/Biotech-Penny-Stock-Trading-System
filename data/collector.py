@@ -22,7 +22,12 @@ def _cache_path(name: str) -> Path:
 
 
 def get_biotech_universe(force_refresh: bool = False) -> list[str]:
-    """Get deduplicated list of biotech tickers from XBI + IBB ETF holdings."""
+    """Get deduplicated list of biotech/healthcare tickers via Yahoo screener.
+
+    Uses yfinance's EquityQuery screener to fetch US-listed healthcare stocks
+    with market cap under $2B, which captures small-cap and penny stocks that
+    the ETF top-holdings approach misses.
+    """
     cache_file = _cache_path("biotech_universe.json")
 
     if not force_refresh and cache_file.exists():
@@ -30,57 +35,68 @@ def get_biotech_universe(force_refresh: bool = False) -> list[str]:
             cached = json.load(f)
         return cached["tickers"]
 
-    tickers = set()
+    tickers: set[str] = set()
+
+    # Primary: Yahoo Finance screener for US healthcare small-caps
+    try:
+        print("  Fetching via Yahoo Finance screener...")
+        query = yf.EquityQuery("and", [
+            yf.EquityQuery("eq", ["sector", "Healthcare"]),
+            yf.EquityQuery("eq", ["region", "us"]),
+            yf.EquityQuery("lt", ["intradaymarketcap", 2_000_000_000]),
+        ])
+
+        for offset in range(0, 2000, 250):
+            result = yf.screen(query, size=250, offset=offset)
+            quotes = result.get("quotes", [])
+            if not quotes:
+                break
+            for q in quotes:
+                sym = q.get("symbol", "")
+                if sym:
+                    tickers.add(sym)
+            print(f"    Fetched {len(tickers)} tickers so far...")
+
+    except Exception as e:
+        print(f"  Screener failed: {e}")
+
+    # Also pull ETF top holdings to capture any larger biotechs
     for etf_symbol in config.BIOTECH_ETFS:
         try:
             etf = yf.Ticker(etf_symbol)
-            # Try holdings from funds_data
             if hasattr(etf, "funds_data"):
-                try:
-                    holdings = etf.funds_data.top_holdings
-                    if holdings is not None and not holdings.empty:
-                        tickers.update(holdings.index.tolist())
-                        continue
-                except Exception:
-                    pass
+                holdings = etf.funds_data.top_holdings
+                if holdings is not None and not holdings.empty:
+                    tickers.update(holdings.index.tolist())
+        except Exception:
+            pass
 
-            # Fallback: try .holdings attribute
-            try:
-                holdings_df = etf.get_holdings()
-                if holdings_df is not None and not holdings_df.empty:
-                    if "Symbol" in holdings_df.columns:
-                        tickers.update(holdings_df["Symbol"].tolist())
-                    elif "symbol" in holdings_df.columns:
-                        tickers.update(holdings_df["symbol"].tolist())
-                    else:
-                        tickers.update(holdings_df.index.tolist())
-                    continue
-            except Exception:
-                pass
-
-            print(f"  Warning: Could not fetch holdings for {etf_symbol}")
-        except Exception as e:
-            print(f"  Error fetching {etf_symbol}: {e}")
-
-    # Clean up tickers
+    # Clean up: keep only simple US ticker symbols
     cleaned = set()
     for t in tickers:
         if not isinstance(t, str):
             continue
         t = t.strip().upper()
-        if t and len(t) <= 5 and t.isalpha():
-            cleaned.add(t)
+        # Filter out non-US tickers (contain dots like .TO, .L) and OTC pinks (5+ chars ending in F)
+        if not t or "." in t:
+            continue
+        if len(t) > 5:
+            continue
+        if not t.isalpha():
+            continue
+        cleaned.add(t)
 
     result = sorted(cleaned)
 
     if not result:
-        print("  Warning: No tickers fetched from ETFs. Using fallback list.")
+        print("  Warning: Screener returned no tickers. Using fallback list.")
         result = _fallback_biotech_tickers()
 
     os.makedirs(config.CACHE_DIR, exist_ok=True)
     with open(cache_file, "w") as f:
         json.dump({"tickers": result, "fetched": str(date.today())}, f)
 
+    print(f"  Universe: {len(result)} tickers")
     return result
 
 
