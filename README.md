@@ -8,8 +8,8 @@ Built to answer the question: **"What causes those crazy 100%+ jumps in biotech 
 
 ## What It Does
 
-1. **Scans ~300 biotech stocks** (pulled from XBI and IBB ETF holdings)
-2. **Finds big movers** — any stock that moved 10%+ in a single day over the last 30 days
+1. **Scans biotech penny stocks** (US healthcare names under $300M market cap and under $5/share, pulled from the Yahoo Finance screener)
+2. **Finds big movers** — any stock that moved 20%+ in a single day over the last 30 days
 3. **Fetches news** for each mover from Finnhub (financial news API)
 4. **Uses AI (Claude)** to read the news and classify *why* each stock moved:
    - FDA Approval / Rejection
@@ -187,13 +187,34 @@ To open in Excel, just double-click the file, or in Excel go to File > Open and 
 
 ---
 
+## Tunable Settings
+
+All of these live in [`config.py`](config.py) — open it in TextEdit (`open -e config.py`), change a value, save, and re-run the pipeline. After changing any setting that affects the **universe** (market cap or share price), delete the cached universe so it re-fetches:
+
+```
+rm cache/biotech_universe.json
+```
+
+| Variable | Default | What It Controls | When to Change It |
+|---|---|---|---|
+| `MIN_PCT_CHANGE` | `20.0` | Minimum absolute % daily move for a stock to count as a "mover". | **Lower it** (e.g. `10.0`) if you're getting too few results. **Raise it** (e.g. `30.0`) if there's too much noise to sift through. |
+| `MAX_SHARE_PRICE` | `5.0` | Penny-stock cutoff. Stocks trading above this price are excluded both from the universe and from the mover results. | Set to `1.0` for stricter sub-$1 penny stocks, or `10.0` for a looser "low-priced" definition. |
+| `MAX_MARKET_CAP` | `300_000_000` | Universe filter. Only US healthcare companies with a market cap under this value are included. | Lower (e.g. `100_000_000`) for nano-caps only. Raise (e.g. `1_000_000_000`) to include small-caps. |
+| `LOOKBACK_DAYS` | `30` | How many days back to scan for movers. | Lower for a quicker daily run; raise for a longer historical view. Note: you can also override this per-run with `--days`. |
+| `MIN_VOLUME_MULTIPLIER` | `0.0` | Requires daily volume to be at least this multiple of the 20-day average. `0.0` disables the filter. | Set to `1.5` or `2.0` to require above-average volume — useful for cutting out noisy moves on illiquid penny stocks. |
+| `CLAUDE_MODEL` | `claude-haiku-4-5-20251001` | Which Claude model classifies the news. | Switch to a Sonnet/Opus model for higher-quality classification at higher cost. |
+| `CLAUDE_BATCH_SIZE` | `10` | How many news articles are sent to Claude per API call. | Lower if you hit token limits; raise to reduce API calls. |
+| `FINNHUB_DELAY` | `1.1` | Seconds to wait between Finnhub API calls (free tier is 60/min). | Only change if you have a paid Finnhub plan with a higher rate limit. |
+
+---
+
 ## Troubleshooting
 
 **"command not found: python"**
 Try `python3` instead of `python` in all commands above.
 
 **"No movers found"**
-The market might have been calm. Try lowering the threshold: open `config.py` in TextEdit and change `MIN_PCT_CHANGE = 10.0` to `MIN_PCT_CHANGE = 5.0`.
+The market might have been calm. Try lowering the threshold in `config.py` (see [Tunable Settings](#tunable-settings) below) — for example, change `MIN_PCT_CHANGE = 20.0` to `15.0` or `10.0`.
 
 **"Finnhub error" or rate limit messages**
 The free Finnhub tier allows 60 calls per minute. If you hit the limit, the tool will retry automatically. If problems persist, wait a minute and run again.
