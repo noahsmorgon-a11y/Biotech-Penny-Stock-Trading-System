@@ -43,7 +43,8 @@ def get_biotech_universe(force_refresh: bool = False) -> list[str]:
         query = yf.EquityQuery("and", [
             yf.EquityQuery("eq", ["sector", "Healthcare"]),
             yf.EquityQuery("eq", ["region", "us"]),
-            yf.EquityQuery("lt", ["intradaymarketcap", 2_000_000_000]),
+            yf.EquityQuery("lt", ["intradaymarketcap", config.MAX_MARKET_CAP]),
+            yf.EquityQuery("lt", ["intradayprice", config.MAX_SHARE_PRICE]),
         ])
 
         for offset in range(0, 2000, 250):
@@ -59,17 +60,6 @@ def get_biotech_universe(force_refresh: bool = False) -> list[str]:
 
     except Exception as e:
         print(f"  Screener failed: {e}")
-
-    # Also pull ETF top holdings to capture any larger biotechs
-    for etf_symbol in config.BIOTECH_ETFS:
-        try:
-            etf = yf.Ticker(etf_symbol)
-            if hasattr(etf, "funds_data"):
-                holdings = etf.funds_data.top_holdings
-                if holdings is not None and not holdings.empty:
-                    tickers.update(holdings.index.tolist())
-        except Exception:
-            pass
 
     # Clean up: keep only simple US ticker symbols
     cleaned = set()
@@ -234,6 +224,11 @@ def _process_single_ticker(
     for idx, row in df.iterrows():
         pct = row.get("pct_change")
         if pd.isna(pct) or abs(pct) < min_pct_change:
+            continue
+
+        # Penny stock filter: skip if close price is above the threshold
+        close_price = row.get("Close")
+        if pd.isna(close_price) or close_price > config.MAX_SHARE_PRICE:
             continue
 
         avg_vol = row.get("avg_volume_20d", 0)

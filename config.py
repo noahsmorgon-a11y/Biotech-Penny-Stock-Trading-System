@@ -17,8 +17,12 @@ LOOKBACK_DAYS = 30
 START_DATE = TODAY - timedelta(days=LOOKBACK_DAYS)
 
 # Mover Detection
-MIN_PCT_CHANGE = 10.0  # Minimum absolute % daily move to qualify
+MIN_PCT_CHANGE = 20.0  # Minimum absolute % daily move to qualify (penny stocks are noisy)
 MIN_VOLUME_MULTIPLIER = 0.0  # Disabled — don't filter out movers by volume
+
+# Penny stock filter
+MAX_SHARE_PRICE = 5.0  # Only keep movers trading under $5/share
+MAX_MARKET_CAP = 300_000_000  # Universe screener: under $300M (micro/nano-cap)
 
 # Biotech Universe Source ETFs
 BIOTECH_ETFS = ["XBI", "IBB"]
